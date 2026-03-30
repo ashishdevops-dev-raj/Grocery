@@ -1,0 +1,383 @@
+const STORAGE_KEY = "grocery_bill_pdf_v1";
+
+function $(id) {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`Missing element: #${id}`);
+  return el;
+}
+
+function n2(v) {
+  const num = Number(v);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function money(v) {
+  return n2(v).toFixed(2);
+}
+
+function todayISO() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function formatDateHuman(iso) {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("-").map((x) => Number(x));
+  if (!y || !m || !d) return iso;
+  return `${String(d).padStart(2, "0")}-${String(m).padStart(2, "0")}-${String(y).slice(-2)}`;
+}
+
+function makeItem(id, data = {}) {
+  return {
+    id,
+    name: data.name ?? "",
+    uom: data.uom ?? "KG",
+    qty: data.qty ?? 1,
+    rate: data.rate ?? 0,
+  };
+}
+
+function uuid() {
+  return Math.random().toString(16).slice(2) + Date.now().toString(16);
+}
+
+const state = {
+  items: [],
+};
+
+function defaultDoc() {
+  return {
+    sellerName: "NIKITA TRADERS",
+    sellerGstin: "21AIQPK9098N1ZD",
+    sellerAddress: "WARD NO-09, HOUSE NO-003, PAIKARAYPUR\nNEAR NISER JATNI\nKHORDHA, ODISHA - 752050\nINDIA",
+    sellerState: "21-ODISHA",
+    sellerPhone: "",
+    billToName: "M/S PERFECTION",
+    billToGstin: "19AAOCP8586B1ZT",
+    billToAddress: "Kheyadaha road, Deora, South 24Parganas\nSTATE WEST BENGAL, CODE 19",
+    invoiceNo: "01",
+    invoiceDate: todayISO(),
+    placeOfSupply: "Begusarai, Bihar",
+    charges: 200,
+    discount: 0,
+    taxPct: 0,
+    bankName: "HDFC",
+    bankAcc: "50100319579456",
+    bankIfsc: "HDFC0009686",
+    bankHolder: "MANISH KUMAR",
+    items: [
+      { name: "Amul Gold (Tetra Pack)", uom: "PKT", qty: 12, rate: 80 },
+      { name: "Biscuit Marie @10/-", uom: "PKT", qty: 12, rate: 10 },
+      { name: "Rice Basmati Sonachandi", uom: "KG", qty: 26, rate: 54 },
+      { name: "Salt - Tata", uom: "KG", qty: 30, rate: 30 },
+    ],
+  };
+}
+
+function readForm() {
+  return {
+    sellerName: $("sellerName").value.trim(),
+    sellerGstin: $("sellerGstin").value.trim(),
+    sellerAddress: $("sellerAddress").value,
+    sellerState: $("sellerState").value.trim(),
+    sellerPhone: $("sellerPhone").value.trim(),
+    billToName: $("billToName").value.trim(),
+    billToGstin: $("billToGstin").value.trim(),
+    billToAddress: $("billToAddress").value,
+    invoiceNo: $("invoiceNo").value.trim(),
+    invoiceDate: $("invoiceDate").value,
+    placeOfSupply: $("placeOfSupply").value.trim(),
+    charges: n2($("charges").value),
+    discount: n2($("discount").value),
+    taxPct: n2($("taxPct").value),
+    bankName: $("bankName").value.trim(),
+    bankAcc: $("bankAcc").value.trim(),
+    bankIfsc: $("bankIfsc").value.trim(),
+    bankHolder: $("bankHolder").value.trim(),
+    items: state.items.map((x) => ({ name: x.name, uom: x.uom, qty: n2(x.qty), rate: n2(x.rate) })),
+  };
+}
+
+function writeForm(doc) {
+  $("sellerName").value = doc.sellerName ?? "";
+  $("sellerGstin").value = doc.sellerGstin ?? "";
+  $("sellerAddress").value = doc.sellerAddress ?? "";
+  $("sellerState").value = doc.sellerState ?? "";
+  $("sellerPhone").value = doc.sellerPhone ?? "";
+
+  $("billToName").value = doc.billToName ?? "";
+  $("billToGstin").value = doc.billToGstin ?? "";
+  $("billToAddress").value = doc.billToAddress ?? "";
+
+  $("invoiceNo").value = doc.invoiceNo ?? "";
+  $("invoiceDate").value = doc.invoiceDate ?? todayISO();
+  $("placeOfSupply").value = doc.placeOfSupply ?? "";
+
+  $("charges").value = n2(doc.charges ?? 0);
+  $("discount").value = n2(doc.discount ?? 0);
+  $("taxPct").value = n2(doc.taxPct ?? 0);
+
+  $("bankName").value = doc.bankName ?? "";
+  $("bankAcc").value = doc.bankAcc ?? "";
+  $("bankIfsc").value = doc.bankIfsc ?? "";
+  $("bankHolder").value = doc.bankHolder ?? "";
+
+  state.items = (doc.items ?? []).map((it) => makeItem(uuid(), it));
+  if (state.items.length === 0) state.items = [makeItem(uuid())];
+  renderItemsEditor();
+  renderPreview();
+}
+
+function compute() {
+  const charges = n2($("charges").value);
+  const discount = n2($("discount").value);
+  const taxPct = n2($("taxPct").value);
+
+  const subtotal = state.items.reduce((sum, it) => sum + n2(it.qty) * n2(it.rate), 0);
+  const taxableBase = Math.max(0, subtotal + charges - discount);
+  const tax = taxableBase * (taxPct / 100);
+  const grand = taxableBase + tax;
+
+  return { subtotal, charges, discount, tax, grand };
+}
+
+function renderItemsEditor() {
+  const body = $("itemsBody");
+  body.innerHTML = "";
+
+  for (const it of state.items) {
+    const row = document.createElement("div");
+    row.className = "itemrow";
+
+    const name = document.createElement("input");
+    name.className = "field__input";
+    name.placeholder = "Item";
+    name.value = it.name;
+    name.addEventListener("input", () => {
+      it.name = name.value;
+      renderPreview();
+    });
+
+    const uom = document.createElement("input");
+    uom.className = "field__input";
+    uom.placeholder = "KG";
+    uom.value = it.uom;
+    uom.addEventListener("input", () => {
+      it.uom = uom.value.toUpperCase();
+      renderPreview();
+    });
+
+    const qty = document.createElement("input");
+    qty.className = "field__input num";
+    qty.type = "number";
+    qty.step = "0.01";
+    qty.min = "0";
+    qty.value = String(it.qty);
+    qty.addEventListener("input", () => {
+      it.qty = n2(qty.value);
+      renderItemsEditorAmountsOnly();
+      renderPreviewTotalsOnly();
+    });
+
+    const rate = document.createElement("input");
+    rate.className = "field__input num";
+    rate.type = "number";
+    rate.step = "0.01";
+    rate.min = "0";
+    rate.value = String(it.rate);
+    rate.addEventListener("input", () => {
+      it.rate = n2(rate.value);
+      renderItemsEditorAmountsOnly();
+      renderPreviewTotalsOnly();
+    });
+
+    const amount = document.createElement("input");
+    amount.className = "field__input num";
+    amount.type = "text";
+    amount.value = money(n2(it.qty) * n2(it.rate));
+    amount.readOnly = true;
+    amount.dataset.amountFor = it.id;
+
+    const del = document.createElement("button");
+    del.className = "iconbtn";
+    del.type = "button";
+    del.title = "Remove";
+    del.textContent = "×";
+    del.addEventListener("click", () => {
+      state.items = state.items.filter((x) => x.id !== it.id);
+      if (state.items.length === 0) state.items = [makeItem(uuid())];
+      renderItemsEditor();
+      renderPreview();
+    });
+
+    row.append(name, uom, qty, rate, amount, del);
+    body.append(row);
+  }
+}
+
+function renderItemsEditorAmountsOnly() {
+  for (const it of state.items) {
+    const el = document.querySelector(`[data-amount-for="${it.id}"]`);
+    if (el) el.value = money(n2(it.qty) * n2(it.rate));
+  }
+}
+
+function setText(id, value) {
+  $(id).textContent = value && String(value).trim() ? String(value) : "—";
+}
+
+function setHtml(id, value) {
+  const el = $(id);
+  const v = value && String(value).trim() ? String(value) : "—";
+  el.textContent = v;
+}
+
+function renderPreview() {
+  const doc = readForm();
+
+  setText("vSellerName", doc.sellerName);
+  setText("vSignFor", doc.sellerName);
+  setHtml("vSellerAddress", doc.sellerAddress);
+  setText("vSellerGstin", doc.sellerGstin);
+  setText("vSellerState", doc.sellerState);
+  setText("vSellerPhone", doc.sellerPhone);
+
+  setText("vBillToName", doc.billToName);
+  setHtml("vBillToAddress", doc.billToAddress);
+  setText("vBillToGstin", doc.billToGstin);
+
+  setText("vInvoiceNo", doc.invoiceNo);
+  setText("vInvoiceDate", formatDateHuman(doc.invoiceDate));
+  setText("vPlaceSupply", doc.placeOfSupply);
+
+  const payToWrap = $("vPayToWrap");
+  const hasPay =
+    doc.bankName || doc.bankAcc || doc.bankIfsc || doc.bankHolder;
+  payToWrap.style.display = hasPay ? "" : "none";
+  setText("vBankName", doc.bankName);
+  setText("vBankAcc", doc.bankAcc);
+  setText("vBankIfsc", doc.bankIfsc);
+  setText("vBankHolder", doc.bankHolder);
+
+  const vItems = $("vItems");
+  vItems.innerHTML = "";
+
+  state.items.forEach((it, idx) => {
+    const row = document.createElement("div");
+    row.className = "table__row table__row--item";
+    const amount = n2(it.qty) * n2(it.rate);
+
+    row.innerHTML = `
+      <div>${idx + 1}</div>
+      <div>${escapeHtml(it.name || "")}</div>
+      <div>${escapeHtml((it.uom || "").toUpperCase())}</div>
+      <div class="num">${trimZeros(it.qty)}</div>
+      <div class="num">${money(it.rate)}</div>
+      <div class="num">${money(amount)}</div>
+    `;
+    vItems.append(row);
+  });
+
+  renderPreviewTotalsOnly();
+}
+
+function renderPreviewTotalsOnly() {
+  const { subtotal, charges, discount, tax, grand } = compute();
+  $("vSubtotal").textContent = money(subtotal);
+  $("vCharges").textContent = money(charges);
+  $("vDiscount").textContent = money(discount);
+  $("vTax").textContent = money(tax);
+  $("vGrand").textContent = money(grand);
+}
+
+function trimZeros(v) {
+  const num = n2(v);
+  const s = num.toFixed(2);
+  return s.replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function attachLivePreview() {
+  const ids = [
+    "sellerName",
+    "sellerGstin",
+    "sellerAddress",
+    "sellerState",
+    "sellerPhone",
+    "billToName",
+    "billToGstin",
+    "billToAddress",
+    "invoiceNo",
+    "invoiceDate",
+    "placeOfSupply",
+    "charges",
+    "discount",
+    "taxPct",
+    "bankName",
+    "bankAcc",
+    "bankIfsc",
+    "bankHolder",
+  ];
+
+  for (const id of ids) {
+    $(id).addEventListener("input", () => renderPreview());
+    $(id).addEventListener("change", () => renderPreview());
+  }
+}
+
+function save() {
+  const doc = readForm();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(doc));
+}
+
+function load() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function newDoc() {
+  localStorage.removeItem(STORAGE_KEY);
+  writeForm(defaultDoc());
+}
+
+function init() {
+  $("invoiceDate").value = todayISO();
+
+  $("btnAddItem").addEventListener("click", () => {
+    state.items.push(makeItem(uuid(), { uom: "KG", qty: 1, rate: 0 }));
+    renderItemsEditor();
+    renderPreview();
+  });
+
+  $("btnPrint").addEventListener("click", () => {
+    save();
+    document.title = `invoice-${$("invoiceNo").value || "pdf"}`;
+    window.print();
+  });
+
+  $("btnSave").addEventListener("click", () => save());
+  $("btnNew").addEventListener("click", () => newDoc());
+
+  attachLivePreview();
+
+  const fromStorage = load();
+  writeForm(fromStorage ?? defaultDoc());
+}
+
+init();
