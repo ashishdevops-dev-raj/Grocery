@@ -1,5 +1,8 @@
 const STORAGE_KEY = "grocery_bill_pdf_v1";
 
+const DEFAULT_PLACE_OF_SUPPLY =
+  "Mediversal Simran Multi Super Speciality Hospital\nUlao Rd, Singhaul Dih, Begusarai, Bihar 851134";
+
 function $(id) {
   const el = document.getElementById(id);
   if (!el) throw new Error(`Missing element: #${id}`);
@@ -54,13 +57,12 @@ function defaultDoc() {
     sellerGstin: "21AIQPK9098N1ZD",
     sellerAddress: "WARD NO-09, HOUSE NO-003, PAIKARAYPUR\nNEAR NISER JATNI\nKHORDHA, ODISHA - 752050\nINDIA",
     sellerState: "21-ODISHA",
-    sellerPhone: "",
     billToName: "M/S PERFECTION",
     billToGstin: "19AAOCP8586B1ZT",
     billToAddress: "Kheyadaha road, Deora, South 24Parganas\nSTATE WEST BENGAL, CODE 19",
+    placeOfSupply: DEFAULT_PLACE_OF_SUPPLY,
     invoiceNo: "01",
     invoiceDate: todayISO(),
-    placeOfSupply: "Begusarai, Bihar",
     charges: 200,
     discount: 0,
     taxPct: 0,
@@ -83,13 +85,12 @@ function readForm() {
     sellerGstin: $("sellerGstin").value.trim(),
     sellerAddress: $("sellerAddress").value,
     sellerState: $("sellerState").value.trim(),
-    sellerPhone: $("sellerPhone").value.trim(),
     billToName: $("billToName").value.trim(),
     billToGstin: $("billToGstin").value.trim(),
     billToAddress: $("billToAddress").value,
+    placeOfSupply: $("placeOfSupply").value.trim(),
     invoiceNo: $("invoiceNo").value.trim(),
     invoiceDate: $("invoiceDate").value,
-    placeOfSupply: $("placeOfSupply").value.trim(),
     charges: n2($("charges").value),
     discount: n2($("discount").value),
     taxPct: n2($("taxPct").value),
@@ -106,15 +107,14 @@ function writeForm(doc) {
   $("sellerGstin").value = doc.sellerGstin ?? "";
   $("sellerAddress").value = doc.sellerAddress ?? "";
   $("sellerState").value = doc.sellerState ?? "";
-  $("sellerPhone").value = doc.sellerPhone ?? "";
 
   $("billToName").value = doc.billToName ?? "";
   $("billToGstin").value = doc.billToGstin ?? "";
   $("billToAddress").value = doc.billToAddress ?? "";
+  $("placeOfSupply").value = doc.placeOfSupply ?? "";
 
   $("invoiceNo").value = doc.invoiceNo ?? "";
   $("invoiceDate").value = doc.invoiceDate ?? todayISO();
-  $("placeOfSupply").value = doc.placeOfSupply ?? "";
 
   $("charges").value = n2(doc.charges ?? 0);
   $("discount").value = n2(doc.discount ?? 0);
@@ -235,23 +235,28 @@ function setHtml(id, value) {
   el.textContent = v;
 }
 
+/** One flowing line for preview (like printed invoice). */
+function addressAsSingleLine(text) {
+  if (!text || !String(text).trim()) return "";
+  return String(text).trim().replace(/\s*\n+\s*/g, " ").replace(/\s+/g, " ");
+}
+
 function renderPreview() {
   const doc = readForm();
 
   setText("vSellerName", doc.sellerName);
   setText("vSignFor", doc.sellerName);
-  setHtml("vSellerAddress", doc.sellerAddress);
+  setHtml("vSellerAddress", addressAsSingleLine(doc.sellerAddress));
   setText("vSellerGstin", doc.sellerGstin);
   setText("vSellerState", doc.sellerState);
-  setText("vSellerPhone", doc.sellerPhone);
 
   setText("vBillToName", doc.billToName);
   setHtml("vBillToAddress", doc.billToAddress);
   setText("vBillToGstin", doc.billToGstin);
+  setHtml("vPlaceSupply", doc.placeOfSupply);
 
   setText("vInvoiceNo", doc.invoiceNo);
   setText("vInvoiceDate", formatDateHuman(doc.invoiceDate));
-  setText("vPlaceSupply", doc.placeOfSupply);
 
   const payToWrap = $("vPayToWrap");
   const hasPay =
@@ -314,13 +319,12 @@ function attachLivePreview() {
     "sellerGstin",
     "sellerAddress",
     "sellerState",
-    "sellerPhone",
     "billToName",
     "billToGstin",
     "billToAddress",
+    "placeOfSupply",
     "invoiceNo",
     "invoiceDate",
-    "placeOfSupply",
     "charges",
     "discount",
     "taxPct",
@@ -345,7 +349,12 @@ function load() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw);
+    const doc = JSON.parse(raw);
+    const pos = doc.placeOfSupply != null ? String(doc.placeOfSupply).trim() : "";
+    if (!pos || pos === "Begusarai, Bihar") {
+      doc.placeOfSupply = DEFAULT_PLACE_OF_SUPPLY;
+    }
+    return doc;
   } catch {
     return null;
   }

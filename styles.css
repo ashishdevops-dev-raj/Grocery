@@ -189,6 +189,7 @@ input[type="number"]{
   padding:24px 22px;
   max-width: 900px;
   margin: 0 auto;
+  font-family: Georgia, "Times New Roman", Times, serif;
 }
 .invoice__meta{
   text-align:center;
@@ -209,23 +210,103 @@ input[type="number"]{
 
 .invoice__top{
   display:grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap:14px;
-  margin-top:14px;
-  align-items:start;
+  grid-template-columns: minmax(0, 1.85fr) minmax(200px, 0.92fr);
+  gap:12px 14px;
+  margin-top:16px;
+  align-items:stretch;
 }
 
 .box{
   border:1px solid #000;
-  padding:10px 10px;
+  padding:12px 14px;
   min-height: 122px;
+  text-align:left;
 }
-.box--billto{grid-column:1 / -1}
-.box__h{
-  font-weight:900;
+.box--billto{
+  grid-column:1 / -1;
+  padding:0;
+  min-height:auto;
+}
+.billto-split{
+  display:grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+  align-items:stretch;
+}
+.billto-split__col{
+  padding:12px 14px;
+  text-align:left;
+}
+.billto-split__rule{
+  background:#000;
+  width:1px;
+  min-height:100%;
+}
+.box__h--split{
+  margin-bottom:8px;
+  padding-bottom:0;
+  border-bottom:none;
+}
+.box__kv--billto{
+  margin-top:8px;
+  gap:6px;
+}
+.box__p--place{
+  white-space:pre-wrap;
+  line-height:1.5;
+  font-weight:400;
+  color:#222;
+  margin:0;
   font-size:12px;
+}
+.box--billto .box__p--strong{
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.box--seller{
+  min-height: auto;
+}
+.box--seller .box__p--addr{
+  white-space: normal;
+  line-height:1.5;
+  margin:0 0 12px 0;
+  font-size:12px;
+  font-weight:400;
+  color:#222;
+  text-transform:none;
+  letter-spacing:0;
+}
+.box__kv--seller{
+  margin-top:0;
+  gap:8px;
+  padding-top:2px;
+  border-top:1px solid rgba(0,0,0,.12);
+}
+.box--seller .k{
+  font-weight:700;
+}
+.box--invoiceMeta{
+  min-height: auto;
+}
+.box--invoiceMeta .box__h{
+  margin-bottom:10px;
+  padding-bottom:8px;
+  border-bottom:1px solid rgba(0,0,0,.15);
+  letter-spacing:.08em;
+}
+.box__kv--invoice{
+  margin-top:0;
+  gap:10px;
+}
+.box__val{
+  font-weight:400;
+  color:#222;
+}
+.box__h{
+  font-weight:800;
+  font-size:11px;
   margin-bottom:6px;
   text-transform:uppercase;
+  letter-spacing:.1em;
 }
 .box__p{font-size:12px; line-height:1.25; white-space:pre-wrap}
 .box__p--strong{font-weight:800}
@@ -235,7 +316,10 @@ input[type="number"]{
   display:grid;
   gap:4px;
 }
-.k{font-weight:800}
+.k{
+  font-weight:700;
+  color:#111;
+}
 
 .table{
   margin-top:14px;

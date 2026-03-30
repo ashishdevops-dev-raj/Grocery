@@ -33,15 +33,11 @@
             </label>
             <label class="field grid__full">
               <span class="field__label">Address (multi-line)</span>
-              <textarea id="sellerAddress" class="field__input field__input--ta" rows="4" placeholder="Ward No-09, House No-003, Paikaraypur&#10;Near Niser Jatni&#10;Khordha, Odisha - 752050&#10;India"></textarea>
+              <textarea id="sellerAddress" class="field__input field__input--ta" rows="4" placeholder="Ward No-09, House No-003, Paikaraypur Near Niser Jatni&#10;Khordha, Odisha - 752050,India"></textarea>
             </label>
-            <label class="field">
+            <label class="field grid__full">
               <span class="field__label">State</span>
               <input id="sellerState" class="field__input" type="text" placeholder="21-ODISHA" />
-            </label>
-            <label class="field">
-              <span class="field__label">Phone (optional)</span>
-              <input id="sellerPhone" class="field__input" type="text" placeholder="+91 ..." />
             </label>
           </div>
         </div>
@@ -61,6 +57,10 @@
               <span class="field__label">Address (multi-line)</span>
               <textarea id="billToAddress" class="field__input field__input--ta" rows="3" placeholder="Kheyadaha Road, Deora, South 24 Parganas&#10;West Bengal, Code 19"></textarea>
             </label>
+            <label class="field grid__full">
+              <span class="field__label">Place of supply</span>
+              <textarea id="placeOfSupply" class="field__input field__input--ta" rows="4" placeholder="Mediversal Simran Multi Super Speciality Hospital&#10;Ulao Rd, Singhaul Dih, Begusarai, Bihar 851134"></textarea>
+            </label>
           </div>
         </div>
 
@@ -74,10 +74,6 @@
             <label class="field">
               <span class="field__label">Date</span>
               <input id="invoiceDate" class="field__input" type="date" />
-            </label>
-            <label class="field grid__full">
-              <span class="field__label">Place of supply</span>
-              <input id="placeOfSupply" class="field__input" type="text" placeholder="Begusarai, Bihar" />
             </label>
           </div>
         </div>
@@ -149,31 +145,37 @@
           </div>
 
           <div class="invoice__top">
-            <section class="box">
-              <div class="box__h"> </div>
-              <div id="vSellerAddress" class="box__p"></div>
-              <div class="box__kv">
-                <div><span class="k">GSTIN:</span> <span id="vSellerGstin">—</span></div>
-                <div><span class="k">State:</span> <span id="vSellerState">—</span></div>
-                <div><span class="k">Phone:</span> <span id="vSellerPhone">—</span></div>
+            <section class="box box--seller">
+              <div id="vSellerAddress" class="box__p box__p--addr"></div>
+              <div class="box__kv box__kv--seller">
+                <div><span class="k">GSTIN:</span> <span id="vSellerGstin" class="box__val">—</span></div>
+                <div><span class="k">State:</span> <span id="vSellerState" class="box__val">—</span></div>
               </div>
             </section>
 
-            <section class="box">
+            <section class="box box--invoiceMeta">
               <div class="box__h">Invoice details</div>
-              <div class="box__kv">
-                <div><span class="k">Invoice No:</span> <span id="vInvoiceNo">—</span></div>
-                <div><span class="k">Date:</span> <span id="vInvoiceDate">—</span></div>
-                <div><span class="k">Place of supply:</span> <span id="vPlaceSupply">—</span></div>
+              <div class="box__kv box__kv--invoice">
+                <div><span class="k">Invoice No:</span> <span id="vInvoiceNo" class="box__val">—</span></div>
+                <div><span class="k">Date:</span> <span id="vInvoiceDate" class="box__val">—</span></div>
               </div>
             </section>
 
             <section class="box box--billto">
-              <div class="box__h">Bill to</div>
-              <div id="vBillToName" class="box__p box__p--strong">—</div>
-              <div id="vBillToAddress" class="box__p"></div>
-              <div class="box__kv">
-                <div><span class="k">GSTIN:</span> <span id="vBillToGstin">—</span></div>
+              <div class="billto-split">
+                <div class="billto-split__col billto-split__col--left">
+                  <div class="box__h box__h--split">Bill to</div>
+                  <div id="vBillToName" class="box__p box__p--strong">—</div>
+                  <div id="vBillToAddress" class="box__p"></div>
+                  <div class="box__kv box__kv--billto">
+                    <div><span class="k">GSTIN:</span> <span id="vBillToGstin" class="box__val">—</span></div>
+                  </div>
+                </div>
+                <div class="billto-split__rule" aria-hidden="true"></div>
+                <div class="billto-split__col billto-split__col--right">
+                  <div class="box__h box__h--split">Place of supply-</div>
+                  <div id="vPlaceSupply" class="box__p box__p--place">—</div>
+                </div>
               </div>
             </section>
           </div>
