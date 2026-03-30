@@ -72,9 +72,7 @@ function defaultDoc() {
     bankHolder: "MANISH KUMAR",
     items: [
       { name: "Amul Gold (Tetra Pack)", uom: "PKT", qty: 12, rate: 80 },
-      { name: "Biscuit Marie @10/-", uom: "PKT", qty: 12, rate: 10 },
-      { name: "Rice Basmati Sonachandi", uom: "KG", qty: 26, rate: 54 },
-      { name: "Salt - Tata", uom: "KG", qty: 30, rate: 30 },
+  
     ],
   };
 }
