@@ -177,7 +177,7 @@ function renderItemsEditor() {
     qty.addEventListener("input", () => {
       it.qty = n2(qty.value);
       renderItemsEditorAmountsOnly();
-      renderPreviewTotalsOnly();
+      renderPreview();
     });
 
     const rate = document.createElement("input");
@@ -189,7 +189,7 @@ function renderItemsEditor() {
     rate.addEventListener("input", () => {
       it.rate = n2(rate.value);
       renderItemsEditorAmountsOnly();
-      renderPreviewTotalsOnly();
+      renderPreview();
     });
 
     const amount = document.createElement("input");
