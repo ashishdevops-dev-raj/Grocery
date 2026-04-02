@@ -49,6 +49,7 @@ function uuid() {
 
 const state = {
   items: [],
+  returnItems: [],
 };
 
 function defaultDoc() {
@@ -74,6 +75,7 @@ function defaultDoc() {
       { name: "Amul Gold (Tetra Pack)", uom: "PKT", qty: 12, rate: 80 },
   
     ],
+    returnItems: [],
   };
 }
 
@@ -97,6 +99,7 @@ function readForm() {
     bankIfsc: $("bankIfsc").value.trim(),
     bankHolder: $("bankHolder").value.trim(),
     items: state.items.map((x) => ({ name: x.name, uom: x.uom, qty: n2(x.qty), rate: n2(x.rate) })),
+    returnItems: state.returnItems.map((x) => ({ name: x.name, uom: x.uom, qty: n2(x.qty), rate: n2(x.rate) })),
   };
 }
 
@@ -125,8 +128,17 @@ function writeForm(doc) {
 
   state.items = (doc.items ?? []).map((it) => makeItem(uuid(), it));
   if (state.items.length === 0) state.items = [makeItem(uuid())];
+
+  state.returnItems = (doc.returnItems ?? []).map((it) => makeItem(uuid(), it));
+  if (state.returnItems.length === 0) state.returnItems = [makeItem(uuid())];
+
   renderItemsEditor();
+  renderReturnItemsEditor();
   renderPreview();
+}
+
+function sumLineItems(list) {
+  return list.reduce((sum, it) => sum + n2(it.qty) * n2(it.rate), 0);
 }
 
 function compute() {
@@ -134,12 +146,21 @@ function compute() {
   const discount = n2($("discount").value);
   const taxPct = n2($("taxPct").value);
 
-  const subtotal = state.items.reduce((sum, it) => sum + n2(it.qty) * n2(it.rate), 0);
-  const taxableBase = Math.max(0, subtotal + charges - discount);
+  const subtotal = sumLineItems(state.items);
+  const returnAmount = sumLineItems(state.returnItems);
+  const afterReturns = subtotal - returnAmount;
+  const taxableBase = Math.max(0, afterReturns + charges - discount);
   const tax = taxableBase * (taxPct / 100);
   const grand = taxableBase + tax;
 
-  return { subtotal, charges, discount, tax, grand };
+  return { subtotal, returnAmount, afterReturns, charges, discount, tax, grand };
+}
+
+/** Summary display: returns shown as a negative deduction. */
+function formatReturnAmountLine(returnAmount) {
+  const n = n2(returnAmount);
+  if (n <= 0) return "0.00";
+  return `-${money(n)}`;
 }
 
 function renderItemsEditor() {
@@ -223,6 +244,87 @@ function renderItemsEditorAmountsOnly() {
   }
 }
 
+function renderReturnItemsEditor() {
+  const body = $("returnItemsBody");
+  body.innerHTML = "";
+
+  for (const it of state.returnItems) {
+    const row = document.createElement("div");
+    row.className = "itemrow";
+
+    const name = document.createElement("input");
+    name.className = "field__input";
+    name.placeholder = "Return item";
+    name.value = it.name;
+    name.addEventListener("input", () => {
+      it.name = name.value;
+      renderPreview();
+    });
+
+    const uom = document.createElement("input");
+    uom.className = "field__input";
+    uom.placeholder = "KG";
+    uom.value = it.uom;
+    uom.addEventListener("input", () => {
+      it.uom = uom.value.toUpperCase();
+      renderPreview();
+    });
+
+    const qty = document.createElement("input");
+    qty.className = "field__input num";
+    qty.type = "number";
+    qty.step = "0.01";
+    qty.min = "0";
+    qty.value = String(it.qty);
+    qty.addEventListener("input", () => {
+      it.qty = n2(qty.value);
+      renderReturnItemsEditorAmountsOnly();
+      renderPreview();
+    });
+
+    const rate = document.createElement("input");
+    rate.className = "field__input num";
+    rate.type = "number";
+    rate.step = "0.01";
+    rate.min = "0";
+    rate.value = String(it.rate);
+    rate.addEventListener("input", () => {
+      it.rate = n2(rate.value);
+      renderReturnItemsEditorAmountsOnly();
+      renderPreview();
+    });
+
+    const amount = document.createElement("input");
+    amount.className = "field__input num";
+    amount.type = "text";
+    amount.value = money(n2(it.qty) * n2(it.rate));
+    amount.readOnly = true;
+    amount.dataset.amountReturnFor = it.id;
+
+    const del = document.createElement("button");
+    del.className = "iconbtn";
+    del.type = "button";
+    del.title = "Remove";
+    del.textContent = "×";
+    del.addEventListener("click", () => {
+      state.returnItems = state.returnItems.filter((x) => x.id !== it.id);
+      if (state.returnItems.length === 0) state.returnItems = [makeItem(uuid())];
+      renderReturnItemsEditor();
+      renderPreview();
+    });
+
+    row.append(name, uom, qty, rate, amount, del);
+    body.append(row);
+  }
+}
+
+function renderReturnItemsEditorAmountsOnly() {
+  for (const it of state.returnItems) {
+    const el = document.querySelector(`[data-amount-return-for="${it.id}"]`);
+    if (el) el.value = money(n2(it.qty) * n2(it.rate));
+  }
+}
+
 function setText(id, value) {
   $(id).textContent = value && String(value).trim() ? String(value) : "—";
 }
@@ -284,12 +386,32 @@ function renderPreview() {
     vItems.append(row);
   });
 
+  const vReturnItems = $("vReturnItems");
+  vReturnItems.innerHTML = "";
+
+  state.returnItems.forEach((it, idx) => {
+    const row = document.createElement("div");
+    row.className = "table__row table__row--item";
+    const amount = n2(it.qty) * n2(it.rate);
+
+    row.innerHTML = `
+      <div>${idx + 1}</div>
+      <div>${escapeHtml(it.name || "")}</div>
+      <div>${escapeHtml((it.uom || "").toUpperCase())}</div>
+      <div class="num">${trimZeros(it.qty)}</div>
+      <div class="num">${money(it.rate)}</div>
+      <div class="num">${money(amount)}</div>
+    `;
+    vReturnItems.append(row);
+  });
+
   renderPreviewTotalsOnly();
 }
 
 function renderPreviewTotalsOnly() {
-  const { subtotal, charges, discount, tax, grand } = compute();
+  const { subtotal, returnAmount, charges, discount, tax, grand } = compute();
   $("vSubtotal").textContent = money(subtotal);
+  $("vReturnAmount").textContent = formatReturnAmountLine(returnAmount);
   $("vCharges").textContent = money(charges);
   $("vDiscount").textContent = money(discount);
   $("vTax").textContent = money(tax);
@@ -369,6 +491,12 @@ function init() {
   $("btnAddItem").addEventListener("click", () => {
     state.items.push(makeItem(uuid(), { uom: "KG", qty: 1, rate: 0 }));
     renderItemsEditor();
+    renderPreview();
+  });
+
+  $("btnAddReturnItem").addEventListener("click", () => {
+    state.returnItems.push(makeItem(uuid(), { uom: "KG", qty: 1, rate: 0 }));
+    renderReturnItemsEditor();
     renderPreview();
   });
 

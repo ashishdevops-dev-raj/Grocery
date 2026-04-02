@@ -354,6 +354,18 @@ input[type="number"]{
 }
 .table__row--item:last-child{border-bottom:none}
 
+.invoice-table-wrap--returns{
+  margin-top:18px;
+}
+.invoice-table-wrap__title{
+  margin:0 0 8px 0;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#111;
+}
+
 .invoice__bottom{
   display:grid;
   grid-template-columns: 1.2fr 1fr;
