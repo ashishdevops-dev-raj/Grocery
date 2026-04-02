@@ -130,7 +130,6 @@ function writeForm(doc) {
   if (state.items.length === 0) state.items = [makeItem(uuid())];
 
   state.returnItems = (doc.returnItems ?? []).map((it) => makeItem(uuid(), it));
-  if (state.returnItems.length === 0) state.returnItems = [makeItem(uuid())];
 
   renderItemsEditor();
   renderReturnItemsEditor();
@@ -161,6 +160,22 @@ function formatReturnAmountLine(returnAmount) {
   const n = n2(returnAmount);
   if (n <= 0) return "0.00";
   return `-${money(n)}`;
+}
+
+function renderReturnItems() {
+  const section = document.getElementById("return-section");
+  const hasReturns = state.returnItems.length > 0;
+  if (section) {
+    section.style.display = hasReturns ? "block" : "none";
+  }
+  const panelWrap = document.getElementById("return-panel-wrap");
+  if (panelWrap) {
+    panelWrap.style.display = hasReturns ? "block" : "none";
+  }
+  const summaryLine = document.getElementById("return-summary-line");
+  if (summaryLine) {
+    summaryLine.style.display = hasReturns ? "" : "none";
+  }
 }
 
 function renderItemsEditor() {
@@ -308,7 +323,6 @@ function renderReturnItemsEditor() {
     del.textContent = "×";
     del.addEventListener("click", () => {
       state.returnItems = state.returnItems.filter((x) => x.id !== it.id);
-      if (state.returnItems.length === 0) state.returnItems = [makeItem(uuid())];
       renderReturnItemsEditor();
       renderPreview();
     });
@@ -406,6 +420,7 @@ function renderPreview() {
   });
 
   renderPreviewTotalsOnly();
+  renderReturnItems();
 }
 
 function renderPreviewTotalsOnly() {

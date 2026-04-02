@@ -101,16 +101,18 @@
             <button id="btnAddReturnItem" class="btn btn--ghost" type="button">+ Add return</button>
           </div>
 
-          <div class="items" role="region" aria-label="Return items list">
-            <div class="items__head">
-              <div>Item name</div>
-              <div>UOM</div>
-              <div class="num">Qty</div>
-              <div class="num">Rate</div>
-              <div class="num">Amount</div>
-              <div></div>
+          <div id="return-panel-wrap" class="return-panel-wrap" style="display: none">
+            <div class="items" role="region" aria-label="Return items list">
+              <div class="items__head">
+                <div>Item name</div>
+                <div>UOM</div>
+                <div class="num">Qty</div>
+                <div class="num">Rate</div>
+                <div class="num">Amount</div>
+                <div></div>
+              </div>
+              <div id="returnItemsBody" class="items__body"></div>
             </div>
-            <div id="returnItemsBody" class="items__body"></div>
           </div>
 
           <div class="totals">
@@ -209,18 +211,20 @@
             <div id="vItems"></div>
           </div>
 
-          <div class="invoice-table-wrap invoice-table-wrap--returns">
-            <div class="invoice-table-wrap__title">Return Items</div>
-            <div class="table">
-              <div class="table__row table__row--head">
-                <div>SL.NO</div>
-                <div>ITEM NAME</div>
-                <div>UOM</div>
-                <div class="num">QTY</div>
-                <div class="num">RATE</div>
-                <div class="num">AMOUNT</div>
+          <div id="return-section" style="display: none">
+            <div class="invoice-table-wrap invoice-table-wrap--returns">
+              <div class="invoice-table-wrap__title">Return Items</div>
+              <div class="table">
+                <div class="table__row table__row--head">
+                  <div>SL.NO</div>
+                  <div>ITEM NAME</div>
+                  <div>UOM</div>
+                  <div class="num">QTY</div>
+                  <div class="num">RATE</div>
+                  <div class="num">AMOUNT</div>
+                </div>
+                <div id="vReturnItems"></div>
               </div>
-              <div id="vReturnItems"></div>
             </div>
           </div>
 
@@ -239,7 +243,7 @@
                   <div>Subtotal</div>
                   <div id="vSubtotal" class="num">0.00</div>
                 </div>
-                <div class="summary__line">
+                <div id="return-summary-line" class="summary__line" style="display: none">
                   <div>Return amount</div>
                   <div id="vReturnAmount" class="num">0.00</div>
                 </div>
